@@ -10,8 +10,14 @@ class Pays (models.Model):
 
 	def __str__(self):
 		return self.nom
-
-
+	def json(self):
+		return{
+		"id" : self.id,
+		"nom" : self.nom, 
+		"tva" : self.tva,
+		"tarif_electrique" : self.tarif_electrique,
+		"salaire_minimum" : self.salaire_minimum,
+	}
 
 class Ville (models.Model):
 	nom = models.CharField(max_length=100)
@@ -24,8 +30,13 @@ class Ville (models.Model):
 	
 	def __str__(self):
 		return self.nom
-
-
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"taxe_immobiliere" : self.taxe_immobiliere, 
+		"prix_m2" : self.prix_m2,
+		"pays" : self.pays.pk,
+	}
 
 
 
@@ -38,6 +49,17 @@ class Machine (models.Model):
 
 	def __str__(self):
 		return self.nom
+	def costs(self):
+		return self.prix
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"prix" : self.prix, 
+		"duree_de_vie" : self.duree_de_vie,
+		"cout_maintenance" : self.cout_maintenance,
+		"superficie" : self.superficie,
+	}
+		
 
 class QuantiteMachine (models.Model):
 	machine = models.ForeignKey(
@@ -47,7 +69,14 @@ class QuantiteMachine (models.Model):
 	nombre = models.IntegerField()
 
 	def __str__(self):
-		return self.nombre
+		return str(self.nombre)
+	def costs(self):
+		return self.nombre * self.machine.costs()
+	def json(self):
+		return{
+		"machine" : self.machine.pk,
+		"nombre" : self.nombre, 
+	}	
 
 class Lieu (models.Model):
 	nom = models.CharField(max_length=100)
@@ -58,9 +87,25 @@ class Lieu (models.Model):
 	superficie = models.FloatField()
 	quantite_machines = models.ManyToManyField(QuantiteMachine)
 	consommation_electrique = models.FloatField()
-
 	def __str__(self):
-		return self.nom
+		return str(self.nom)
+	def costs(self):
+		couts = self.superficie * self.ville.prix_m2 + self.consommation_electrique * self.ville.pays.tarif_electrique 
+		couts += sum( 
+			quantite_machines.costs()
+			for quantite_machines in self.quantite_machines.all())
+		couts += sum( 
+			PointDeVente.stock.costs()
+			for PointDeVente in self.pointdevente_set.all())
+		return couts
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"ville" : self.ville.pk, 
+		"superficie" : self.superficie,
+		"quantite_machines" : self.quantite_machines,
+		"consommation_electrique" : self.consommation_electrique,
+	}
 
 class Transport (models.Model):
 	nombre_palettes = models.IntegerField()
@@ -76,6 +121,16 @@ class Transport (models.Model):
 	on_delete=models.PROTECT,
 	related_name="transport_arivee",
 	)
+	def costs(self):
+		return self.cout
+	def json(self):
+		return{
+		"nombre_palettes" : self.nombre_palettes,
+		"cout" : self.cout, 
+		"delai" : self.delai,
+		"depart" : self.depart.pk,
+		"arrivee" : self.arrivee.pk,
+	}
 
 
 
@@ -103,7 +158,20 @@ class Operation (models.Model):
 	
 	def __str__(self):
 		return self.nom
-
+	def costs(self):
+		return self.cout+self.heures_de_travail*self.pays.salaire_minimum+self.consommation_electrique*self.pays.tarif_electrique
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"operation_suivante" : self.operation_suivante, 
+		"cout" : self.cout,
+		"machine" : self.machine.pk,
+		"heures_de_travail" : self.heures_de_travail,
+		"consommation_electrique" : self.consommation_electrique,
+		"quantite_produits" : self.quantite_produits.pl,
+	}
+	
+	
 class QuantiteProduit (models.Model):
 	nombre = models.IntegerField()
 	matiere_premiere = models.ForeignKey(
@@ -112,7 +180,15 @@ class QuantiteProduit (models.Model):
 	)
 	
 	def __str__(self):
-		return self.nombre
+		return str(self.nombre)
+	def costs(self):
+		return (self.nombre * self.matiere_premiere.costs())
+	def json(self):
+		return{
+		"nombre" : self.nombre,
+		"matiere_premiere" : self.matiere_premiere.pk,
+	}
+	
 		
 class Produit (models.Model):
 	nom = models.CharField(max_length=100)
@@ -123,6 +199,16 @@ class Produit (models.Model):
 	
 	def __str__(self):
 		return self.nom
+	def costs(self):
+		return self.prix_de_vente
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"prix_de_vente" : self.prix_de_vente, 
+		"duree_de_vie" : self.duree_de_vie,
+		"nombre_par_palette" : self.nombre_par_palette,
+		"operations" : self.operations,
+	}
 	
 class PrixProduit (models.Model):
 	produit = models.ForeignKey(
@@ -132,7 +218,12 @@ class PrixProduit (models.Model):
 	prix_achat = models.FloatField()
 	
 	def __str__(self):
-		return self.prix_achat
+		return str(self.prix_achat)
+	def json(self):
+		return{
+		"produit" : self.produit.pk,
+		"prix_achat" : self.prix_achat, 
+	}
 
 class Fournisseur (models.Model):
 	nom = models.CharField(max_length=100)
@@ -140,12 +231,25 @@ class Fournisseur (models.Model):
 	PrixProduit,
 	on_delete=models.PROTECT,
 	)
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"prix_produits" : self.prix_produits.pk, 
+	}
 
 
 class Stock (models.Model):
 	quantite_produits = models.ManyToManyField(QuantiteProduit)
 	palettes_max = models.IntegerField()
-
+	
+	def costs(self):
+		return sum( quantite_produits.costs()
+		 for quantite_produits in self.quantite_produits.all())
+	def json(self):
+		return{
+		"quantite_produits" : self.quantite_produits,
+		"palettes_max" : self.palettes_max, 
+	}
 
 
 class PointDeVente (models.Model):
@@ -162,6 +266,13 @@ class PointDeVente (models.Model):
 
 	def __str__(self):
 		return self.nom
+	def json(self):
+		return{
+		"nom" : self.nom,
+		"lieu" : self.lieu.pk, 
+		"heures_de_travail" : self.heures_de_travail,
+		"stock" : self.stock.pk,
+	}
 
 class Facture (models.Model):
 	quantite_produits = models.ForeignKey(
@@ -174,4 +285,10 @@ class Facture (models.Model):
 	on_delete=models.PROTECT,
 	)
 	client = models.CharField(max_length=100) 
-
+	def json(self):
+		return{
+		"quantite_produits" : self.quantite_produits.pk,
+		"reduction" : self.reduction, 
+		"point_de_vente" : self.point_de_vente.pk,
+		"client" : self.client,
+	}

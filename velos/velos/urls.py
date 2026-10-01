@@ -18,6 +18,37 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from high_level.views import (
+    PaysDetailView,
+    VilleDetailView,
+    MachineDetailView,
+    QuantiteMachineDetailView,
+    LieuDetailView,
+    TransportDetailView,
+    OperationDetailView,
+    QuantiteProduitDetailView,
+    ProduitDetailView,
+    PrixProduitDetailView,
+    FournisseurDetailView,
+    StockDetailView,
+    PointDeVenteDetailView,
+    FactureDetailView,
+)
 urlpatterns = [
     path("admin/", admin.site.urls),
+    
+    path("pays/<int:pk>/", PaysDetailView.as_view()),
+    path("ville/<int:pk>/", VilleDetailView.as_view()),
+    path("machine/<int:pk>/", MachineDetailView.as_view()),
+    path("quantiteMachine/<int:pk>/", QuantiteMachineDetailView.as_view()),
+    path("lieu/<int:pk>/", LieuDetailView.as_view()),
+    path("transport/<int:pk>/", TransportDetailView.as_view()),
+    path("operation/<int:pk>/", OperationDetailView.as_view()),
+    path("quantiteProduit/<int:pk>/", QuantiteProduitDetailView.as_view()),
+    path("produit/<int:pk>/", ProduitDetailView.as_view()),
+    path("prixProduit/<int:pk>/", PrixProduitDetailView.as_view()),
+    path("fournisseur/<int:pk>/", FournisseurDetailView.as_view()),
+    path("stock/<int:pk>/", StockDetailView.as_view()),
+    path("pointDeVente/<int:pk>/", PointDeVenteDetailView.as_view()),
+    path("facture/<int:pk>/", FactureDetailView.as_view()),
 ]
