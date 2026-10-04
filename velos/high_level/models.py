@@ -103,7 +103,10 @@ class Lieu (models.Model):
 		"nom" : self.nom,
 		"ville" : self.ville.pk, 
 		"superficie" : self.superficie,
-		"quantite_machines" : self.quantite_machines,
+		"quantite_machines" : [
+			quantiteMachine.pk
+			for quantiteMachine in self.quantite_machines.all()
+		],
 		"consommation_electrique" : self.consommation_electrique,
 	}
 
@@ -207,7 +210,10 @@ class Produit (models.Model):
 		"prix_de_vente" : self.prix_de_vente, 
 		"duree_de_vie" : self.duree_de_vie,
 		"nombre_par_palette" : self.nombre_par_palette,
-		"operations" : self.operations,
+		"operations" :[ 
+			operation.pk
+			for operation in self.operations.all()
+		],
 	}
 	
 class PrixProduit (models.Model):
@@ -247,7 +253,10 @@ class Stock (models.Model):
 		 for quantite_produits in self.quantite_produits.all())
 	def json(self):
 		return{
-		"quantite_produits" : self.quantite_produits,
+		"quantite_produits": [
+            		quantite_produit.pk
+            		for quantite_produit in self.quantite_produits.all()
+        	],
 		"palettes_max" : self.palettes_max, 
 	}
 
