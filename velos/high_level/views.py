@@ -101,3 +101,11 @@ class FactureDetailView(DetailView):
 	
 	def render_to_response(self, context, **response_kwargs):
 		return JsonResponse(self.object.json())
+
+
+
+class ApiView(DetailView):
+    	model = Lieu
+
+    	def render_to_response(self, context, **response_kwargs):
+        	return JsonResponse(self.object.json_extended())

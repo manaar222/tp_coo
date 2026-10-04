@@ -18,6 +18,9 @@ class Pays (models.Model):
 		"tarif_electrique" : self.tarif_electrique,
 		"salaire_minimum" : self.salaire_minimum,
 	}
+	
+	def json_extended(self):
+    		return self.json()
 
 class Ville (models.Model):
 	nom = models.CharField(max_length=100)
@@ -38,8 +41,13 @@ class Ville (models.Model):
 		"pays" : self.pays.pk,
 	}
 
-
-
+	def json_extended(self):
+    		return{
+        	"nom": self.nom,
+        	"taxe_immobiliere": self.taxe_immobiliere,
+        	"prix_m2": self.prix_m2,
+        	"pays": self.pays.json(),
+    }
 class Machine (models.Model):
 	nom = models.CharField(max_length=100)
 	prix = models.FloatField()
@@ -59,6 +67,8 @@ class Machine (models.Model):
 		"cout_maintenance" : self.cout_maintenance,
 		"superficie" : self.superficie,
 	}
+	def json_extended(self):
+   	 return self.json()
 		
 
 class QuantiteMachine (models.Model):
@@ -76,7 +86,12 @@ class QuantiteMachine (models.Model):
 		return{
 		"machine" : self.machine.pk,
 		"nombre" : self.nombre, 
-	}	
+	}
+	def json_extended(self):
+   		return {
+        "machine": self.machine.json(),
+        "nombre": self.nombre,
+    }	
 
 class Lieu (models.Model):
 	nom = models.CharField(max_length=100)
@@ -109,6 +124,17 @@ class Lieu (models.Model):
 		],
 		"consommation_electrique" : self.consommation_electrique,
 	}
+	def json_extended(self):
+    		return {
+        	"nom": self.nom,
+        	"ville": self.ville.json(),
+        	"superficie": self.superficie,
+        	"quantite_machines": [
+           	 quantite_machine.json()
+           	 for quantite_machine in self.quantite_machines.all()
+        	],
+        	"consommation_electrique": self.consommation_electrique,
+   	 }
 
 class Transport (models.Model):
 	nombre_palettes = models.IntegerField()
@@ -134,7 +160,14 @@ class Transport (models.Model):
 		"depart" : self.depart.pk,
 		"arrivee" : self.arrivee.pk,
 	}
-
+	def json_extended(self):
+		return{
+		"nombre_palettes" : self.nombre_palettes,
+		"cout" : self.cout, 
+		"delai" : self.delai,
+		"depart" : self.depart.json(),
+		"arrivee" : self.arrivee.json(),
+	}
 
 
 class Operation (models.Model):
@@ -166,12 +199,38 @@ class Operation (models.Model):
 	def json(self):
 		return{
 		"nom" : self.nom,
-		"operation_suivante" : self.operation_suivante, 
+		"operation_suivante": (
+    		self.operation_suivante.pk
+    		if self.operation_suivante
+    		else None
+		), 
 		"cout" : self.cout,
 		"machine" : self.machine.pk,
 		"heures_de_travail" : self.heures_de_travail,
 		"consommation_electrique" : self.consommation_electrique,
-		"quantite_produits" : self.quantite_produits.pl,
+		"quantite_produits": (
+    		self.quantite_produits.pk
+    		if self.quantite_produits
+    		else None
+		),
+	}
+	def json_extended(self):
+		return{
+		"nom" : self.nom,
+		"operation_suivante" : (
+            self.operation_suivante.json()
+            if self.operation_suivante
+            else None
+        ),
+		"cout" : self.cout,
+		"machine" : self.machine.json(),
+		"heures_de_travail" : self.heures_de_travail,
+		"consommation_electrique" : self.consommation_electrique,
+		"quantite_produits": (
+			self.quantite_produits.json() 
+			if self.quantite_produits 
+			else None,
+		),
 	}
 	
 	
@@ -190,6 +249,11 @@ class QuantiteProduit (models.Model):
 		return{
 		"nombre" : self.nombre,
 		"matiere_premiere" : self.matiere_premiere.pk,
+	}
+	def json_extended(self):
+		return{
+		"nombre" : self.nombre,
+		"matiere_premiere" : self.matiere_premiere.json(),
 	}
 	
 		
@@ -215,6 +279,17 @@ class Produit (models.Model):
 			for operation in self.operations.all()
 		],
 	}
+	def json_extended(self):
+		return{
+		"nom" : self.nom,
+		"prix_de_vente" : self.prix_de_vente, 
+		"duree_de_vie" : self.duree_de_vie,
+		"nombre_par_palette" : self.nombre_par_palette,
+		"operations" :[ 
+			operation.json()
+			for operation in self.operations.all()
+		],
+	}
 	
 class PrixProduit (models.Model):
 	produit = models.ForeignKey(
@@ -230,6 +305,11 @@ class PrixProduit (models.Model):
 		"produit" : self.produit.pk,
 		"prix_achat" : self.prix_achat, 
 	}
+	def json_extended(self):
+		return{
+		"produit" : self.produit.json(),
+		"prix_achat" : self.prix_achat, 
+	}
 
 class Fournisseur (models.Model):
 	nom = models.CharField(max_length=100)
@@ -241,6 +321,11 @@ class Fournisseur (models.Model):
 		return{
 		"nom" : self.nom,
 		"prix_produits" : self.prix_produits.pk, 
+	}
+	def json_extended(self):
+		return{
+		"nom" : self.nom,
+		"prix_produits" : self.prix_produits.json(), 
 	}
 
 
@@ -255,6 +340,14 @@ class Stock (models.Model):
 		return{
 		"quantite_produits": [
             		quantite_produit.pk
+            		for quantite_produit in self.quantite_produits.all()
+        	],
+		"palettes_max" : self.palettes_max, 
+	}
+	def json_extended(self):
+		return{
+		"quantite_produits": [
+            		quantite_produit.json()
             		for quantite_produit in self.quantite_produits.all()
         	],
 		"palettes_max" : self.palettes_max, 
@@ -282,6 +375,13 @@ class PointDeVente (models.Model):
 		"heures_de_travail" : self.heures_de_travail,
 		"stock" : self.stock.pk,
 	}
+	def json_extended(self):
+		return{
+		"nom" : self.nom,
+		"lieu" : self.lieu.json(), 
+		"heures_de_travail" : self.heures_de_travail,
+		"stock" : self.stock.json(),
+	}
 
 class Facture (models.Model):
 	quantite_produits = models.ForeignKey(
@@ -299,5 +399,12 @@ class Facture (models.Model):
 		"quantite_produits" : self.quantite_produits.pk,
 		"reduction" : self.reduction, 
 		"point_de_vente" : self.point_de_vente.pk,
+		"client" : self.client,
+	}
+	def json_extended(self):
+		return{
+		"quantite_produits" : self.quantite_produits.json(),
+		"reduction" : self.reduction, 
+		"point_de_vente" : self.point_de_vente.json(),
 		"client" : self.client,
 	}

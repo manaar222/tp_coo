@@ -33,6 +33,7 @@ from high_level.views import (
     StockDetailView,
     PointDeVenteDetailView,
     FactureDetailView,
+    ApiView,
 )
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -51,4 +52,5 @@ urlpatterns = [
     path("stock/<int:pk>/", StockDetailView.as_view()),
     path("pointDeVente/<int:pk>/", PointDeVenteDetailView.as_view()),
     path("facture/<int:pk>/", FactureDetailView.as_view()),
+    path("api/<int:pk>/", ApiView.as_view(), name="api"),
 ]
